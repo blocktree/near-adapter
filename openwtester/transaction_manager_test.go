@@ -140,7 +140,7 @@ func TestWalletManager_GetAssetsAccountTokenBalance(t *testing.T) {
 func TestWalletManager_GetEstimateFeeRate(t *testing.T) {
 	tm := testInitWalletManager()
 	coin := openwallet.Coin{
-		Symbol: "Ⓝ",
+		Symbol: "N",
 	}
 	feeRate, unit, err := tm.GetEstimateFeeRate(coin)
 	if err != nil {
@@ -151,7 +151,7 @@ func TestWalletManager_GetEstimateFeeRate(t *testing.T) {
 }
 
 func TestGetAddressBalance(t *testing.T) {
-	symbol := "Ⓝ"
+	symbol := "N"
 	assetsMgr, err := openw.GetAssetsAdapter(symbol)
 	if err != nil {
 		log.Error(symbol, "is not support")

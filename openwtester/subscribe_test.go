@@ -63,7 +63,7 @@ func TestSubscribeAddress(t *testing.T) {
 
 	var (
 		endRunning = make(chan bool, 1)
-		symbol     = "Ⓝ"
+		symbol     = "N"
 		addrs      = map[string]string{
 
 			//"0d584a4cbbfd9a4878d816512894e65918e54fae13df39a6f520fc90caea2fb0": "sender",
