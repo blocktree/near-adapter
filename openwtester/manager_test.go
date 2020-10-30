@@ -13,7 +13,7 @@ var (
 	testApp        = "assets-adapter"
 	configFilePath = filepath.Join("conf")
 	dbFilePath     = filepath.Join("data", "db")
-	dbFileName     = "blockchain-N.db"
+	dbFileName     = "blockchain-NEAR.db"
 )
 
 func testInitWalletManager() *openw.WalletManager {
@@ -23,7 +23,7 @@ func testInitWalletManager() *openw.WalletManager {
 	tc.ConfigDir = configFilePath
 	tc.EnableBlockScan = false
 	tc.SupportAssets = []string{
-		"N",
+		"NEAR",
 	}
 	return openw.NewWalletManager(tc)
 	//tm.Init()
@@ -31,7 +31,7 @@ func testInitWalletManager() *openw.WalletManager {
 
 func TestWalletManager_CreateWallet(t *testing.T) {
 	tm := testInitWalletManager()
-	w := &openwallet.Wallet{Alias: "HELLO N", IsTrust: true, Password: "12345678"}
+	w := &openwallet.Wallet{Alias: "HELLO NEAR", IsTrust: true, Password: "12345678"}
 	nw, key, err := tm.CreateWallet(testApp, w)
 	if err != nil {
 		log.Error(err)
@@ -77,7 +77,7 @@ func TestWalletManager_CreateAssetsAccount(t *testing.T) {
 	tm := testInitWalletManager()
 
 	walletID := "WKfekxS7RSAU1pqb6u79HpWoYwkJvm7emx"
-	account := &openwallet.AssetsAccount{Alias: "N", WalletID: walletID, Required: 1, Symbol: "N", IsTrust: true}
+	account := &openwallet.AssetsAccount{Alias: "NEAR", WalletID: walletID, Required: 1, Symbol: "NEAR", IsTrust: true}
 	account, address, err := tm.CreateAssetsAccount(testApp, walletID, "12345678", account, nil)
 	if err != nil {
 		log.Error(err)

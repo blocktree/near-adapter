@@ -29,7 +29,7 @@ import (
 
 const (
 	//币种
-	Symbol    = "N"
+	Symbol    = "NEAR"
 	MasterKey = "Near seed"
 	CurveType = owcrypt.ECC_CURVE_ED25519
 )

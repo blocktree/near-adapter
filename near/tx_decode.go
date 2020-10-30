@@ -147,7 +147,7 @@ func (decoder *TransactionDecoder) CreateMRawTransaction(wrapper openwallet.Wall
 			count.Add(count, a.Balance)
 			if count.Cmp(amount) >= 0 {
 				countList = append(countList, a.Balance.Sub(a.Balance, count.Sub(count, amount)).Uint64())
-				decoder.wm.Log.Std.Notice("The N of the account is enough," +
+				decoder.wm.Log.Std.Notice("The NEAR of the account is enough," +
 					" but cannot be sent in just one transaction!")
 				return err
 			} else {
