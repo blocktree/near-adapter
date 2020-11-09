@@ -185,7 +185,7 @@ func (decoder *TransactionDecoder) CreateMRawTransaction(wrapper openwallet.Wall
 		return errors.New("failed to get recent block hash when create transaction")
 	}
 
-	transfer := nearTransaction.NewTransfer(from, fromPub, nonce + 1, to, blockHash, amount)
+	transfer := nearTransaction.NewTransfer(from, fromPub, nonce + 1, to, blockHash, convertFromAmount(amountStr))
 
 	emptyTrans, hash, err := transfer.CreateEmptyTransactionAndHash()
 	if err != nil {
