@@ -24,6 +24,7 @@ import (
 	"github.com/imroc/req"
 	"github.com/tidwall/gjson"
 	"math/big"
+	"strings"
 )
 
 type ClientInterface interface {
@@ -313,7 +314,11 @@ func (c *Client) getBalance(address string) (*AddrBalance, error) {
 	r, err := c.Call("query", request)
 
 	if err != nil {
-		return nil, err
+		if strings.Contains(err.Error(), "does not exist while viewing") {
+			return &AddrBalance{Address: address, Balance: big.NewInt(0), Actived: false}, nil
+		} else {
+			return nil, err
+		}
 	}
 
 	totalAmount, _ := new(big.Int).SetString(r.Get("amount").String(), 10)
