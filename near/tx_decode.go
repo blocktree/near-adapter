@@ -415,7 +415,7 @@ func (decoder *TransactionDecoder) createRawTransaction(wrapper openwallet.Walle
 	}
 
 	amount := convertFromAmount(amountStr)
-	amount = amount.Add(amount, fee)
+	//amount = amount.Add(amount, fee)
 	from := addrBalance.Address
 
 	fromAddr, err := wrapper.GetAddress(from)
