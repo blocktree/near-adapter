@@ -144,8 +144,12 @@ func (bs *NBlockScanner) ScanBlockTask() {
 		localBlock, err = bs.wm.Client.getBlockByHeight(currentHeight)
 
 		if err != nil {
-			bs.wm.Log.Std.Info("getBlockByHeight failed; unexpected error: %v", err)
-			break
+			if strings.Contains(err.Error(), "{\"code\":-32000,\"message\":\"Server error\",\"data\":\"DB Not Found Error: BLOCK HEIGHT") {
+				continue
+			} else {
+				bs.wm.Log.Std.Info("getBlockByHeight failed; unexpected error: %v", err)
+				break
+			}
 		}
 
 		isFork := false
@@ -180,8 +184,12 @@ func (bs *NBlockScanner) ScanBlockTask() {
 				localBlock, err = bs.wm.Client.getBlockByHeight(currentHeight)
 
 				if err != nil {
-					bs.wm.Log.Std.Error("block scanner can not get prev block; unexpected error: %v", err)
-					break
+					//if strings.Contains(err.Error(), "{\"code\":-32000,\"message\":\"Server error\",\"data\":\"DB Not Found Error: BLOCK HEIGHT") {
+					//
+					//} else {
+						bs.wm.Log.Std.Error("block scanner can not get prev block; unexpected error: %v", err)
+						break
+
 				}
 
 			}
