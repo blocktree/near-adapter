@@ -376,6 +376,7 @@ func (c *Client) getBlockByHeight(height uint64) (*Block, error) {
 }
 
 func (c *Client) getTransactionsInChunks(hash string)([]string, error) {
+
 	request := []string{
 		hash,
 	}
@@ -388,7 +389,14 @@ func (c *Client) getTransactionsInChunks(hash string)([]string, error) {
 	trxs := []string{}
 
 	for _, trx := range resp.Get("transactions").Array() {
-		trxs = append(trxs, trx.Get("hash").String())
+		actions := trx.Get("actions").Array()
+		for _, action := range actions {
+			if action.Get("Transfer").String() != "" || action.Get("AddKey").String() != "" {
+				trxs = append(trxs, trx.Get("hash").String())
+				break
+			}
+		}
+
 	}
 	return trxs, nil
 }
