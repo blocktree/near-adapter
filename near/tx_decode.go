@@ -68,6 +68,7 @@ func (decoder *TransactionDecoder) SubmitRawTransaction(wrapper openwallet.Walle
 	}
 
 	txid, err := decoder.wm.SendRawTransaction(rawTx.RawHex)
+	fmt.Println("[near-debug] : " + txid + rawTx.RawHex)
 	if err != nil {
 		fmt.Println("Tx to send: ", rawTx.RawHex)
 		return nil, err
