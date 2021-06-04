@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/blocktree/go-owcrypt"
 	"math/big"
 	"strings"
@@ -37,7 +38,7 @@ func (tx *Transfer) CreateEmptyTransactionAndHash() (string, string, error) {
 
 	emptyTrans := ts.ToBytes()
 
-	return hex.EncodeToString(emptyTrans),
+	return hex.EncodeToString(emptyTrans) + ":" + tx.SignerID + "@" + fmt.Sprint(tx.Nonce),
 		hex.EncodeToString(owcrypt.Hash(emptyTrans, 0, owcrypt.HASH_ALG_SHA256)),
 		nil
 
@@ -62,7 +63,9 @@ func SignTransaction(hash string, privateKey []byte) ([]byte, error) {
 }
 
 func VerifyAndCombineTransaction(emptyTrans, hash, publicKey, signature string) (string, bool) {
-	trans, err := hex.DecodeString(emptyTrans)
+	transData := strings.Split(emptyTrans, ":")
+
+	trans, err := hex.DecodeString(transData[0])
 	if err != nil || len(trans) == 0 {
 		return "", false
 	}
@@ -85,7 +88,7 @@ func VerifyAndCombineTransaction(emptyTrans, hash, publicKey, signature string) 
 		return "", false
 	}
 
-	signedTrans, _ := hex.DecodeString(emptyTrans + hex.EncodeToString([]byte{KeyTypeED25519}) + signature)
+	signedTrans, _ := hex.DecodeString(transData[0] + hex.EncodeToString([]byte{KeyTypeED25519}) + signature)
 
-	return base64.StdEncoding.EncodeToString(signedTrans), true
+	return base64.StdEncoding.EncodeToString(signedTrans) + ":" + transData[1], true
 }

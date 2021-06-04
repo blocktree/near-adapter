@@ -23,8 +23,11 @@ import (
 	"github.com/blocktree/openwallet/v2/log"
 	"math/big"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
+	ow "github.com/blocktree/openwallet/v2/common"
 	"github.com/blocktree/openwallet/v2/openwallet"
 )
 
@@ -68,6 +71,11 @@ func (decoder *TransactionDecoder) SubmitRawTransaction(wrapper openwallet.Walle
 	if err != nil {
 		fmt.Println("Tx to send: ", rawTx.RawHex)
 		return nil, err
+	} else {
+		addr_nonce := strings.Split(rawTx.RawHex, ":")[1]
+		data := strings.Split(addr_nonce, "@")
+		nonce, _  := strconv.Atoi(data[1])
+		wrapper.SetAddressExtParam(data[0], decoder.wm.FullName(), nonce + 1)
 	}
 
 	rawTx.TxID = txid
@@ -175,9 +183,22 @@ func (decoder *TransactionDecoder) CreateMRawTransaction(wrapper openwallet.Wall
 		blockHash string
 	)
 
-	nonce, err = decoder.wm.Client.getNonce(from)
+	nonce_db, err := wrapper.GetAddressExtParam(from, decoder.wm.FullName())
+	if err != nil {
+		return err
+	}
+	if nonce_db == nil {
+		nonce = 0
+	} else {
+		nonce = ow.NewString(nonce_db).UInt64()
+	}
+	nonceChain, err := decoder.wm.Client.getNonce(from)
 	if err != nil {
 		return errors.New("failed to get nonce when create transaction")
+	}
+
+	if nonceChain > nonce {
+		nonce = nonceChain
 	}
 
 	blockHash, err = decoder.wm.Client.getRecentBlockHash()
@@ -185,7 +206,7 @@ func (decoder *TransactionDecoder) CreateMRawTransaction(wrapper openwallet.Wall
 		return errors.New("failed to get recent block hash when create transaction")
 	}
 
-	transfer := nearTransaction.NewTransfer(from, fromPub, nonce + 1, to, blockHash, convertFromAmount(amountStr))
+	transfer := nearTransaction.NewTransfer(from, fromPub, nonce, to, blockHash, convertFromAmount(amountStr))
 
 	emptyTrans, hash, err := transfer.CreateEmptyTransactionAndHash()
 	if err != nil {

@@ -414,7 +414,7 @@ func (c *Client) sendTransaction(rawTx string) (string, error) {
 	request := []string{rawTx}
 
 	resp, err := c.Call2("broadcast_tx_async", request)
-	fmt.Println(resp)
+
 	if err != nil {
 		return "", err
 	}

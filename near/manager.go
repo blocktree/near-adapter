@@ -18,6 +18,7 @@ package near
 import (
 	"errors"
 	"path/filepath"
+	"strings"
 
 	"github.com/blocktree/openwallet/v2/hdkeystore"
 	"github.com/blocktree/openwallet/v2/log"
@@ -103,7 +104,7 @@ func (wm *WalletManager) sendRawTransactionByNode(txHex string) (string, error) 
 		err  error
 	)
 
-	txid, err = wm.Client.sendTransaction(txHex)
+	txid, err = wm.Client.sendTransaction(strings.Split(txHex, ":")[0])
 
 	if err != nil {
 		return "", err
