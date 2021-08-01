@@ -144,7 +144,8 @@ func (bs *NBlockScanner) ScanBlockTask() {
 		localBlock, err = bs.wm.Client.getBlockByHeight(currentHeight)
 
 		if err != nil {
-			if strings.Contains(err.Error(), "{\"code\":-32000,\"message\":\"Server error\",\"data\":\"DB Not Found Error: BLOCK HEIGHT") {
+			//if strings.Contains(err.Error(), "{\"code\":-32000,\"message\":\"Server error\",\"data\":\"DB Not Found Error: BLOCK HEIGHT") {
+			if strings.Contains(err.Error(), "[-32000]{\"name\":\"HANDLER_ERROR\",\"cause\":{\"info\":{},\"name\":\"UNKNOWN_BLOCK\"}") {
 				continue
 			} else {
 				bs.wm.Log.Std.Info("getBlockByHeight failed; unexpected error: %v", err)
