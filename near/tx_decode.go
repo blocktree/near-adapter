@@ -201,7 +201,7 @@ func (decoder *TransactionDecoder) CreateMRawTransaction(wrapper openwallet.Wall
 	if nonceChain > nonce {
 		nonce = nonceChain
 	}
-
+	nonce = nonce + 1
 	blockHash, err = decoder.wm.Client.getRecentBlockHash()
 	if err != nil {
 		return errors.New("failed to get recent block hash when create transaction")

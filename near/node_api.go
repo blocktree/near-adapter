@@ -410,10 +410,20 @@ func (c *Client) getTransaction(txid string) (*Transaction, error) {
 	return c.NewTransaction(resp), nil
 }
 
+
+func (c *Client) getTxStatus(txid string) {
+	request := []string{txid, "test"}
+	resp, err := c.Call2("EXPERIMENTAL_tx_status", request)
+
+	fmt.Println(err)
+	fmt.Println(resp)
+}
+
+
 func (c *Client) sendTransaction(rawTx string) (string, error) {
 	request := []string{rawTx}
 
-	resp, err := c.Call2("broadcast_tx_async", request)
+	resp, err := c.Call2("broadcast_tx_commit", request)
 
 	if err != nil {
 		return "", err
@@ -424,6 +434,8 @@ func (c *Client) sendTransaction(rawTx string) (string, error) {
 	//if resp.Get("engine_result").String() != "tesSUCCESS" && resp.Get("engine_result").String() != "terQUEUED" {
 	//	return "", errors.New("Submit transaction with error: " + resp.Get("engine_result_message").String())
 	//}
-
-	return resp.String(), nil
+	if resp.Get("status").Get("SuccessValue").String() != "" {
+		return "", errors.New(resp.Get("status").Get("SuccessValue").String())
+	}
+	return resp.Get("transaction").Get("hash").String(), nil
 }
