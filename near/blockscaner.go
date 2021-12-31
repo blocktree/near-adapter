@@ -145,7 +145,12 @@ func (bs *NBlockScanner) ScanBlockTask() {
 
 		if err != nil {
 			//if strings.Contains(err.Error(), "{\"code\":-32000,\"message\":\"Server error\",\"data\":\"DB Not Found Error: BLOCK HEIGHT") {
-			if strings.Contains(err.Error(), "[-32000]{\"name\":\"HANDLER_ERROR\",\"cause\":{\"info\":{},\"name\":\"UNKNOWN_BLOCK\"}") {
+			//if strings.Contains(err.Error(), "[-32000]{\"name\":\"HANDLER_ERROR\",\"cause\":{\"info\":{},\"name\":\"UNKNOWN_BLOCK\"}") {
+			errResp := err.Error()
+			if strings.Contains(errResp, "[-32000]") &&
+				strings.Contains(errResp, "HANDLER_ERROR") &&
+				strings.Contains(errResp, "UNKNOWN_BLOCK") &&
+				strings.Contains(errResp, "DB Not Found Error: BLOCK HEIGHT") {
 				continue
 			} else {
 				bs.wm.Log.Std.Info("getBlockByHeight failed; unexpected error: %v", err)
@@ -188,8 +193,8 @@ func (bs *NBlockScanner) ScanBlockTask() {
 					//if strings.Contains(err.Error(), "{\"code\":-32000,\"message\":\"Server error\",\"data\":\"DB Not Found Error: BLOCK HEIGHT") {
 					//
 					//} else {
-						bs.wm.Log.Std.Error("block scanner can not get prev block; unexpected error: %v", err)
-						break
+					bs.wm.Log.Std.Error("block scanner can not get prev block; unexpected error: %v", err)
+					break
 
 				}
 
@@ -287,7 +292,7 @@ func (bs *NBlockScanner) scanBlock(height uint64) (*Block, error) {
 }
 
 //ScanTxMemPool 扫描交易内存池
-func (bs *NBlockScanner ) ScanTxMemPool() {
+func (bs *NBlockScanner) ScanTxMemPool() {
 
 	bs.wm.Log.Std.Info("block scanner scanning mempool ...")
 
@@ -311,7 +316,7 @@ func (bs *NBlockScanner ) ScanTxMemPool() {
 }
 
 //rescanFailedRecord 重扫失败记录
-func (bs *NBlockScanner ) RescanFailedRecord() {
+func (bs *NBlockScanner) RescanFailedRecord() {
 
 	var (
 		blockMap = make(map[uint64][]string)
@@ -373,7 +378,7 @@ func (bs *NBlockScanner ) RescanFailedRecord() {
 }
 
 //newBlockNotify 获得新区块后，通知给观测者
-func (bs *NBlockScanner ) newBlockNotify(block *Block, isFork bool) {
+func (bs *NBlockScanner) newBlockNotify(block *Block, isFork bool) {
 	header := block.BlockHeader()
 
 	//fmt.Println("M_block_scanner : " + "header.Hash:" + header.Hash + " header.Height:" , header.Height)
@@ -383,7 +388,7 @@ func (bs *NBlockScanner ) newBlockNotify(block *Block, isFork bool) {
 
 //BatchExtractTransaction 批量提取交易单
 //bitcoin 1M的区块链可以容纳3000笔交易，批量多线程处理，速度更快
-func (bs *NBlockScanner ) BatchExtractTransaction(blockHeight uint64, blockHash string, txs []string, memPool bool) error {
+func (bs *NBlockScanner) BatchExtractTransaction(blockHeight uint64, blockHash string, txs []string, memPool bool) error {
 
 	var (
 		quit       = make(chan struct{})
@@ -470,7 +475,7 @@ func (bs *NBlockScanner ) BatchExtractTransaction(blockHeight uint64, blockHash 
 }
 
 //extractRuntime 提取运行时
-func (bs *NBlockScanner ) extractRuntime(producer chan ExtractResult, worker chan ExtractResult, quit chan struct{}) {
+func (bs *NBlockScanner) extractRuntime(producer chan ExtractResult, worker chan ExtractResult, quit chan struct{}) {
 
 	var (
 		values = make([]ExtractResult, 0)
@@ -501,7 +506,7 @@ func (bs *NBlockScanner ) extractRuntime(producer chan ExtractResult, worker cha
 }
 
 //ExtractTransaction 提取交易单
-func (bs *NBlockScanner ) ExtractTransaction(blockHeight uint64, blockHash string, txid string, scanAddressFunc openwallet.BlockScanTargetFunc, memPool bool) ExtractResult {
+func (bs *NBlockScanner) ExtractTransaction(blockHeight uint64, blockHash string, txid string, scanAddressFunc openwallet.BlockScanTargetFunc, memPool bool) ExtractResult {
 
 	var (
 		result = ExtractResult{
@@ -560,7 +565,7 @@ func (bs *NBlockScanner ) ExtractTransaction(blockHeight uint64, blockHash strin
 
 // 从最小单位的 amount 转为带小数点的表示
 func convertToAmount(amount *big.Int) string {
-	d  := decimal.NewFromBigInt(amount, 0)
+	d := decimal.NewFromBigInt(amount, 0)
 	w, _ := decimal.NewFromString("1000000000000000000000000")
 	d = d.Div(w)
 	return d.String()
@@ -576,7 +581,7 @@ func convertFromAmount(amountStr string) *big.Int {
 }
 
 //ExtractTransactionData 提取交易单
-func (bs *NBlockScanner ) extractTransaction(trx *Transaction, result *ExtractResult, scanAddressFunc openwallet.BlockScanTargetFuncV2) {
+func (bs *NBlockScanner) extractTransaction(trx *Transaction, result *ExtractResult, scanAddressFunc openwallet.BlockScanTargetFuncV2) {
 	var (
 		success = true
 	)
@@ -595,69 +600,67 @@ func (bs *NBlockScanner ) extractTransaction(trx *Transaction, result *ExtractRe
 
 		if success {
 			//if trx.TxType == "transfer" {
-				targetResult := scanAddressFunc(openwallet.ScanTargetParam {
-					ScanTarget:     trx.From,
-					Symbol:         bs.wm.Symbol(),
-					ScanTargetType: openwallet.ScanTargetTypeAccountAddress,
-				})
+			targetResult := scanAddressFunc(openwallet.ScanTargetParam{
+				ScanTarget:     trx.From,
+				Symbol:         bs.wm.Symbol(),
+				ScanTargetType: openwallet.ScanTargetTypeAccountAddress,
+			})
 
+			if targetResult.Exist {
 
-				if targetResult.Exist {
-
-
-					//if trx.To == "" {
-					//	input := openwallet.TxInput{}
-					//	input.TxID = trx.TxID
-					//	input.Address = trx.From
-					//	input.Amount = convertToAmount(trx.Fee)
-					//	input.Coin = openwallet.Coin{
-					//		Symbol:     bs.wm.Symbol(),
-					//		IsContract: false,
-					//	}
-					//	input.Index = 0
-					//	input.Sid = openwallet.GenTxInputSID(trx.TxID, bs.wm.Symbol(), "", uint64(0))
-					//	input.CreateAt = createAt
-					//	input.BlockHeight = trx.BlockHeight
-					//	input.BlockHash = trx.BlockHash
-					//	input.Confirm = int64(currentHeight - trx.BlockHeight)
-					//	input.IsMemo = true
-					//	ed := result.extractData[targetResult.SourceKey]
-					//	if ed == nil {
-					//		ed = openwallet.NewBlockExtractData()
-					//		result.extractData[targetResult.SourceKey] = ed
-					//	}
-					//} else {
-						input := openwallet.TxInput{}
-						input.TxID = trx.TxID
-						input.Address = trx.From
-						input.Amount = convertToAmount(trx.Amount)
-						input.Coin = openwallet.Coin{
-							Symbol:     bs.wm.Symbol(),
-							IsContract: false,
-						}
-						input.Index = 0
-						input.Sid = openwallet.GenTxInputSID(trx.TxID, bs.wm.Symbol(), "", uint64(0))
-						input.CreateAt = createAt
-						input.BlockHeight = trx.BlockHeight
-						input.BlockHash = trx.BlockHash
-						input.Confirm = int64(currentHeight - trx.BlockHeight)
-						input.IsMemo = true
-						ed := result.extractData[targetResult.SourceKey]
-						if ed == nil {
-							ed = openwallet.NewBlockExtractData()
-							result.extractData[targetResult.SourceKey] = ed
-						}
-						ed.TxInputs = append(ed.TxInputs, &input)
-
-						tmp := *&input
-						feeCharge := &tmp
-						feeCharge.Index = 1
-						feeCharge.Sid = openwallet.GenTxInputSID(trx.TxID, bs.wm.Symbol(), "", uint64(1))
-						feeCharge.Amount = convertToAmount(trx.Fee)
-						ed.TxInputs = append(ed.TxInputs, feeCharge)
-
-					//}
+				//if trx.To == "" {
+				//	input := openwallet.TxInput{}
+				//	input.TxID = trx.TxID
+				//	input.Address = trx.From
+				//	input.Amount = convertToAmount(trx.Fee)
+				//	input.Coin = openwallet.Coin{
+				//		Symbol:     bs.wm.Symbol(),
+				//		IsContract: false,
+				//	}
+				//	input.Index = 0
+				//	input.Sid = openwallet.GenTxInputSID(trx.TxID, bs.wm.Symbol(), "", uint64(0))
+				//	input.CreateAt = createAt
+				//	input.BlockHeight = trx.BlockHeight
+				//	input.BlockHash = trx.BlockHash
+				//	input.Confirm = int64(currentHeight - trx.BlockHeight)
+				//	input.IsMemo = true
+				//	ed := result.extractData[targetResult.SourceKey]
+				//	if ed == nil {
+				//		ed = openwallet.NewBlockExtractData()
+				//		result.extractData[targetResult.SourceKey] = ed
+				//	}
+				//} else {
+				input := openwallet.TxInput{}
+				input.TxID = trx.TxID
+				input.Address = trx.From
+				input.Amount = convertToAmount(trx.Amount)
+				input.Coin = openwallet.Coin{
+					Symbol:     bs.wm.Symbol(),
+					IsContract: false,
 				}
+				input.Index = 0
+				input.Sid = openwallet.GenTxInputSID(trx.TxID, bs.wm.Symbol(), "", uint64(0))
+				input.CreateAt = createAt
+				input.BlockHeight = trx.BlockHeight
+				input.BlockHash = trx.BlockHash
+				input.Confirm = int64(currentHeight - trx.BlockHeight)
+				input.IsMemo = true
+				ed := result.extractData[targetResult.SourceKey]
+				if ed == nil {
+					ed = openwallet.NewBlockExtractData()
+					result.extractData[targetResult.SourceKey] = ed
+				}
+				ed.TxInputs = append(ed.TxInputs, &input)
+
+				tmp := *&input
+				feeCharge := &tmp
+				feeCharge.Index = 1
+				feeCharge.Sid = openwallet.GenTxInputSID(trx.TxID, bs.wm.Symbol(), "", uint64(1))
+				feeCharge.Amount = convertToAmount(trx.Fee)
+				ed.TxInputs = append(ed.TxInputs, feeCharge)
+
+				//}
+			}
 			//} else {
 			//	targetResult := scanAddressFunc(openwallet.ScanTargetParam {
 			//		ScanTarget:     trx.From,
@@ -694,15 +697,13 @@ func (bs *NBlockScanner ) extractTransaction(trx *Transaction, result *ExtractRe
 			//}
 
 			if trx.TxType == "transfer" {
-				targetResult = scanAddressFunc(openwallet.ScanTargetParam {
+				targetResult = scanAddressFunc(openwallet.ScanTargetParam{
 					ScanTarget:     trx.To,
 					Symbol:         bs.wm.Symbol(),
 					ScanTargetType: openwallet.ScanTargetTypeAccountAddress,
 				})
 
-
 				if targetResult.Exist {
-
 
 					output := openwallet.TxOutPut{}
 					output.TxID = trx.TxID
@@ -781,7 +782,7 @@ func (bs *NBlockScanner ) extractTransaction(trx *Transaction, result *ExtractRe
 }
 
 //newExtractDataNotify 发送通知
-func (bs *NBlockScanner ) newExtractDataNotify(height uint64, extractData map[string]*openwallet.TxExtractData) error {
+func (bs *NBlockScanner) newExtractDataNotify(height uint64, extractData map[string]*openwallet.TxExtractData) error {
 
 	for o, _ := range bs.Observers {
 		for key, data := range extractData {
@@ -803,7 +804,7 @@ func (bs *NBlockScanner ) newExtractDataNotify(height uint64, extractData map[st
 }
 
 //DeleteUnscanRecordNotFindTX 删除未没有找到交易记录的重扫记录
-func (bs *NBlockScanner ) DeleteUnscanRecordNotFindTX() error {
+func (bs *NBlockScanner) DeleteUnscanRecordNotFindTX() error {
 
 	//删除找不到交易单
 	reason := "[-5]No information available about transaction"
@@ -865,7 +866,7 @@ func (bs *NBlockScanner ) DeleteUnscanRecordNotFindTX() error {
 //}
 
 //GetCurrentBlockHeader 获取全网最新高度区块头
-func (bs *NBlockScanner ) GetCurrentBlockHeader() (*openwallet.BlockHeader, error) {
+func (bs *NBlockScanner) GetCurrentBlockHeader() (*openwallet.BlockHeader, error) {
 	var (
 		blockHeight uint64 = 0
 		err         error
@@ -888,7 +889,7 @@ func (bs *NBlockScanner ) GetCurrentBlockHeader() (*openwallet.BlockHeader, erro
 }
 
 //GetScannedBlockHeader 获取已扫高度区块头
-func (bs *NBlockScanner ) GetScannedBlockHeader() (*openwallet.BlockHeader, error) {
+func (bs *NBlockScanner) GetScannedBlockHeader() (*openwallet.BlockHeader, error) {
 
 	var (
 		blockHeight uint64 = 0
@@ -928,12 +929,12 @@ func (bs *NBlockScanner ) GetScannedBlockHeader() (*openwallet.BlockHeader, erro
 }
 
 //GetScannedBlockHeight 获取已扫区块高度
-func (bs *NBlockScanner ) GetScannedBlockHeight() uint64 {
+func (bs *NBlockScanner) GetScannedBlockHeight() uint64 {
 	localHeight, _, _ := bs.wm.Blockscanner.GetLocalNewBlock()
 	return localHeight
 }
 
-func (bs *NBlockScanner ) ExtractTransactionData(txid string, scanTargetFunc openwallet.BlockScanTargetFunc) (map[string][]*openwallet.TxExtractData, error) {
+func (bs *NBlockScanner) ExtractTransactionData(txid string, scanTargetFunc openwallet.BlockScanTargetFunc) (map[string][]*openwallet.TxExtractData, error) {
 
 	scanAddressFunc := func(t openwallet.ScanTarget) (string, bool) {
 		sourceKey, ok := scanTargetFunc(openwallet.ScanTarget{
@@ -1013,7 +1014,7 @@ func (bs *NBlockScanner ) ExtractTransactionData(txid string, scanTargetFunc ope
 //}
 
 //GetSourceKeyByAddress 获取地址对应的数据源标识
-func (bs *NBlockScanner ) GetSourceKeyByAddress(address string) (string, bool) {
+func (bs *NBlockScanner) GetSourceKeyByAddress(address string) (string, bool) {
 	bs.Mu.RLock()
 	defer bs.Mu.RUnlock()
 
@@ -1042,7 +1043,7 @@ func (wm *WalletManager) GetBlockHeight() (uint64, error) {
 }
 
 //GetLocalNewBlock 获取本地记录的区块高度和hash
-func (bs *NBlockScanner ) GetLocalNewBlock() (uint64, string, error) {
+func (bs *NBlockScanner) GetLocalNewBlock() (uint64, string, error) {
 
 	if bs.BlockchainDAI == nil {
 		return 0, "", fmt.Errorf("Blockchain DAI is not setup ")
@@ -1057,7 +1058,7 @@ func (bs *NBlockScanner ) GetLocalNewBlock() (uint64, string, error) {
 }
 
 //SaveLocalNewBlock 记录区块高度和hash到本地
-func (bs *NBlockScanner ) SaveLocalNewBlock(blockHeight uint64, blockHash string) error {
+func (bs *NBlockScanner) SaveLocalNewBlock(blockHeight uint64, blockHash string) error {
 
 	if bs.BlockchainDAI == nil {
 		return fmt.Errorf("Blockchain DAI is not setup ")
@@ -1098,7 +1099,7 @@ func (wm *WalletManager) GetTransaction(txid string) (*Transaction, error) {
 }
 
 //GetAssetsAccountBalanceByAddress 查询账户相关地址的交易记录
-func (bs *NBlockScanner ) GetBalanceByAddress(address ...string) ([]*openwallet.Balance, error) {
+func (bs *NBlockScanner) GetBalanceByAddress(address ...string) ([]*openwallet.Balance, error) {
 
 	addrsBalance := make([]*openwallet.Balance, 0)
 
@@ -1109,7 +1110,6 @@ func (bs *NBlockScanner ) GetBalanceByAddress(address ...string) ([]*openwallet.
 		)
 
 		balance, err = bs.wm.Client.getBalance(addr)
-
 
 		if err != nil {
 			return nil, err
@@ -1149,7 +1149,7 @@ func (c *Client) getMultiAddrTransactions(memoScan string, offset, limit int, ad
 }
 
 //GetAssetsAccountTransactionsByAddress 查询账户相关地址的交易记录
-func (bs *NBlockScanner ) GetTransactionsByAddress(offset, limit int, coin openwallet.Coin, address ...string) ([]*openwallet.TxExtractData, error) {
+func (bs *NBlockScanner) GetTransactionsByAddress(offset, limit int, coin openwallet.Coin, address ...string) ([]*openwallet.TxExtractData, error) {
 	//
 	//var (
 	//	array = make([]*openwallet.TxExtractData, 0)
@@ -1197,7 +1197,7 @@ func (bs *NBlockScanner ) GetTransactionsByAddress(offset, limit int, coin openw
 }
 
 //Run 运行
-func (bs *NBlockScanner ) Run() error {
+func (bs *NBlockScanner) Run() error {
 
 	bs.BlockScannerBase.Run()
 
@@ -1205,7 +1205,7 @@ func (bs *NBlockScanner ) Run() error {
 }
 
 ////Stop 停止扫描
-func (bs *NBlockScanner ) Stop() error {
+func (bs *NBlockScanner) Stop() error {
 
 	bs.BlockScannerBase.Stop()
 
@@ -1213,7 +1213,7 @@ func (bs *NBlockScanner ) Stop() error {
 }
 
 //Pause 暂停扫描
-func (bs *NBlockScanner ) Pause() error {
+func (bs *NBlockScanner) Pause() error {
 
 	bs.BlockScannerBase.Pause()
 
@@ -1221,7 +1221,7 @@ func (bs *NBlockScanner ) Pause() error {
 }
 
 //Restart 继续扫描
-func (bs *NBlockScanner ) Restart() error {
+func (bs *NBlockScanner) Restart() error {
 
 	bs.BlockScannerBase.Restart()
 
@@ -1231,7 +1231,7 @@ func (bs *NBlockScanner ) Restart() error {
 /******************* 使用insight socket.io 监听区块 *******************/
 
 //setupSocketIO 配置socketIO监听新区块
-func (bs *NBlockScanner ) setupSocketIO() error {
+func (bs *NBlockScanner) setupSocketIO() error {
 
 	bs.wm.Log.Info("block scanner use socketIO to listen new data")
 
@@ -1317,6 +1317,6 @@ func (bs *NBlockScanner ) setupSocketIO() error {
 
 //SupportBlockchainDAI 支持外部设置区块链数据访问接口
 //@optional
-func (bs *NBlockScanner ) SupportBlockchainDAI() bool {
+func (bs *NBlockScanner) SupportBlockchainDAI() bool {
 	return true
 }
